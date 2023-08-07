@@ -3,6 +3,7 @@
 
 #ifdef USE_STATS
 
+#include "fc/settings.h"
 #include "fc/stats.h"
 
 #include "sensors/battery.h"
@@ -20,11 +21,11 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(statsConfig_t, statsConfig, PG_STATS_CONFIG, 1);
 
 PG_RESET_TEMPLATE(statsConfig_t, statsConfig,
-    .stats_enabled = 0,
-    .stats_total_time = 0,
-    .stats_total_dist = 0,
+    .stats_enabled = SETTING_STATS_DEFAULT,
+    .stats_total_time = SETTING_STATS_TOTAL_TIME_DEFAULT,
+    .stats_total_dist = SETTING_STATS_TOTAL_DIST_DEFAULT,
 #ifdef USE_ADC
-    .stats_total_energy = 0
+    .stats_total_energy = SETTING_STATS_TOTAL_ENERGY_DEFAULT
 #endif
 );
 
@@ -35,7 +36,7 @@ static uint32_t arm_distance_cm;
 static uint32_t arm_mWhDrawn;
 static uint32_t flyingEnergy; // energy drawn during flying up to last disarm (ARMED) mWh
 
-uint32_t getFlyingEnergy() {
+uint32_t getFlyingEnergy(void) {
     return flyingEnergy;
 }
 #endif
@@ -63,7 +64,7 @@ void statsOnDisarm(void)
                 flyingEnergy += energy;
             }
 #endif
-            writeEEPROM();
+            saveConfigAndNotify();
         }
     }
 }

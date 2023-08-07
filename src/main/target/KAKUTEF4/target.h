@@ -26,6 +26,9 @@
 #if defined(KAKUTEF4V2)
 #   define TARGET_BOARD_IDENTIFIER "KTV2"
 #   define USBD_PRODUCT_STRING "KakuteF4-V2"
+#elif defined(KAKUTEF4V23)
+#   define TARGET_BOARD_IDENTIFIER "KT23"
+#   define USBD_PRODUCT_STRING "KakuteF4-V2.3"
 #else
 #   define TARGET_BOARD_IDENTIFIER "KTV1"
 #   define USBD_PRODUCT_STRING "KakuteF4-V1"
@@ -33,22 +36,25 @@
 
 #define LED0                    PB5
 #define LED1                    PB4
-#define LED2                    PB6
+
+#if !defined(KAKUTEF4V23)
+#   define LED2                 PB6
+#endif
 
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
-
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC5
-#define USE_MPU_DATA_READY_SIGNAL
 
 #define USE_IMU_MPU6500
 #define IMU_MPU6500_ALIGN       CW270_DEG
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_BUS         BUS_SPI1
 
+#define USE_IMU_MPU6000
+#define IMU_MPU6000_ALIGN       CW270_DEG
+#define MPU6000_CS_PIN          PC4
+#define MPU6000_SPI_BUS         BUS_SPI1
 
-#ifdef KAKUTEF4V2
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V23)
 #   define USE_I2C
 #   define USE_I2C_DEVICE_1
 #   define I2C1_SCL                PB8        // SCL pad
@@ -57,7 +63,6 @@
 #   define USE_MAG
 #   define MAG_I2C_BUS             BUS_I2C1
 #   define USE_MAG_HMC5883
-#   define MAG_HMC5883_ALIGN       CW180_DEG
 #   define USE_MAG_QMC5883
 #   define USE_MAG_MAG3110
 #   define USE_MAG_IST8310
@@ -75,7 +80,6 @@
 #   define USE_MAG
 #endif
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PB14
@@ -106,7 +110,7 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#ifdef KAKUTEF4V2
+#if defined(KAKUTEF4V2) || defined(KAKUTEF4V23)
 #   define USE_UART4
 #   define UART4_RX_PIN            PA1
 #   define UART4_TX_PIN            PA0
@@ -168,7 +172,6 @@
 #define TARGET_IO_PORTD        (BIT(2))
 
 #define USE_DSHOT
-#define USE_SERIALSHOT
 #define USE_ESC_SENSOR
 
 #ifdef KAKUTEF4V2

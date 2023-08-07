@@ -25,12 +25,6 @@
 #define BEEPER                  PA4
 #define BEEPER_INVERTED
 
-/*** IMU sensors ***/
-#define USE_EXTI
-
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 // MPU6000
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN       CW90_DEG
@@ -72,7 +66,6 @@
 #define M25P16_SPI_BUS          BUS_SPI2
 
 /*** OSD ***/
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PA15
@@ -146,3 +139,4 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
+

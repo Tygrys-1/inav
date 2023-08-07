@@ -47,6 +47,8 @@
 
 #if defined(USE_HAL_DRIVER)
 #define Bit_RESET GPIO_PIN_RESET
+#elif defined(AT32F43x)
+#define Bit_RESET 0U
 #endif
 
 #define USE_TXRX_LED
@@ -427,11 +429,11 @@ void esc4wayProcess(serialPort_t *mspPort)
     port = mspPort;
 
     // Start here  with UART Main loop
-    #ifdef BEEPER
+#if defined(BEEPER) || defined(USE_DSHOT)
     // fix for buzzer often starts beeping continuously when the ESCs are read
     // switch beeper silent here
     beeperSilence();
-    #endif
+#endif
     bool isExitScheduled = false;
 
     while (1) {

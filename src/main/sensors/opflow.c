@@ -50,6 +50,7 @@
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
+#include "fc/settings.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
@@ -78,9 +79,9 @@ static float opflowCalibrationFlowAcc;
 PG_REGISTER_WITH_RESET_TEMPLATE(opticalFlowConfig_t, opticalFlowConfig, PG_OPFLOW_CONFIG, 2);
 
 PG_RESET_TEMPLATE(opticalFlowConfig_t, opticalFlowConfig,
-    .opflow_hardware = OPFLOW_NONE,
-    .opflow_align = CW0_DEG_FLIP,
-    .opflow_scale = 10.5f,
+    .opflow_hardware = SETTING_OPFLOW_HARDWARE_DEFAULT,
+    .opflow_align = SETTING_ALIGN_OPFLOW_DEFAULT,
+    .opflow_scale = SETTING_OPFLOW_SCALE_DEFAULT,
 );
 
 static bool opflowDetect(opflowDev_t * dev, uint8_t opflowHardwareToUse)
@@ -203,7 +204,7 @@ void opflowUpdate(timeUs_t currentTimeUs)
 
         // If quality of the flow from the sensor is good - process further
         if (opflow.flowQuality == OPFLOW_QUALITY_VALID) {
-            const float integralToRateScaler = (opticalFlowConfig()->opflow_scale > 0.01f) ? (1.0e6 / opflow.dev.rawData.deltaTime) / (float)opticalFlowConfig()->opflow_scale : 0.0f;
+            const float integralToRateScaler = (opticalFlowConfig()->opflow_scale > 0.01f) ? (1.0e6f / opflow.dev.rawData.deltaTime) / (float)opticalFlowConfig()->opflow_scale : 0.0f;
 
             // Apply sensor alignment
             applySensorAlignment(opflow.dev.rawData.flowRateRaw, opflow.dev.rawData.flowRateRaw, opticalFlowConfig()->opflow_align);
@@ -236,8 +237,8 @@ void opflowUpdate(timeUs_t currentTimeUs)
             else if (opflow.flowQuality == OPFLOW_QUALITY_VALID) {
                 // Ongoing calibration - accumulate body and flow rotation magniture if opflow quality is good enough
                 const float invDt = 1.0e6 / opflow.dev.rawData.deltaTime;
-                opflowCalibrationBodyAcc += sqrtf(sq(opflow.bodyRate[X]) + sq(opflow.bodyRate[Y]));
-                opflowCalibrationFlowAcc += sqrtf(sq(opflow.dev.rawData.flowRateRaw[X]) + sq(opflow.dev.rawData.flowRateRaw[Y])) * invDt;
+                opflowCalibrationBodyAcc += calc_length_pythagorean_2D(opflow.bodyRate[X], opflow.bodyRate[Y]);
+                opflowCalibrationFlowAcc += calc_length_pythagorean_2D(opflow.dev.rawData.flowRateRaw[X], opflow.dev.rawData.flowRateRaw[Y]) * invDt;
             }
         }
 

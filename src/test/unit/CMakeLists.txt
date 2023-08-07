@@ -9,6 +9,11 @@ set_property(SOURCE alignsensor_unittest.cc PROPERTY depends
 
 set_property(SOURCE bitarray_unittest.cc PROPERTY depends "common/bitarray.c")
 
+set_property(SOURCE flight_imu_unittest.cc PROPERTY depends     "build/debug.c"
+    "common/maths.c" "common/calibration.c" "common/filter.c"
+    "drivers/accgyro/accgyro_fake.c" "flight/imu.c" "sensors/boardalignment.c"
+    "sensors/gyro.c")
+
 set_property(SOURCE maths_unittest.cc PROPERTY depends "common/maths.c")
 
 set_property(SOURCE olc_unittest.cc PROPERTY depends "common/olc.c")
@@ -27,6 +32,14 @@ set_property(SOURCE telemetry_hott_unittest.cc PROPERTY depends
 
 set_property(SOURCE time_unittest.cc PROPERTY depends "drivers/time.c")
 
+set_property(SOURCE circular_queue_unittest.cc PROPERTY depends "common/circular_queue.c")
+
+set_property(SOURCE osd_unittest.cc PROPERTY depends "io/osd_utils.c" "io/displayport_msp_osd.c" "common/typeconversion.c")
+set_property(SOURCE osd_unittest.cc PROPERTY definitions OSD_UNIT_TEST USE_MSP_DISPLAYPORT DISABLE_MSP_BF_COMPAT)
+
+set_property(SOURCE gps_ublox_unittest.cc PROPERTY depends "io/gps_ublox_utils.c")
+set_property(SOURCE gps_ublox_unittest.cc PROPERTY definitions GPS_UBLOX_UNIT_TEST)
+
 function(unit_test src)
     get_filename_component(basename ${src} NAME)
     string(REPLACE ".cc" "" name ${basename} )
@@ -41,9 +54,13 @@ function(unit_test src)
     endif()
     list(TRANSFORM deps PREPEND "${MAIN_DIR}/")
     add_executable(${name} ${src} ${deps})
-    target_include_directories(${name} PRIVATE . ${MAIN_DIR})
+    set(gen_name ${name}_gen)
+    get_generated_files_dir(gen ${gen_name})
+    target_include_directories(${name} PRIVATE . ${MAIN_DIR} ${gen})
     target_compile_definitions(${name} PRIVATE ${test_definitions})
-    set_target_properties(${name} PROPERTIES COMPILE_FLAGS "-pthread -Wall -Wextra -Wno-extern-c-compat -ggdb3 -O0")
+    target_compile_options(${name} PRIVATE -pthread -Wall -Wextra -Wno-extern-c-compat -ggdb3 -O0)
+    enable_settings(${name} ${gen_name} OUTPUTS setting_files SETTINGS_CXX g++)
+    target_sources(${name} PRIVATE ${setting_files})
     target_link_libraries(${name} gtest_main)
     gtest_discover_tests(${name})
     add_custom_target("run-${name}" "${name}" DEPENDS ${name})

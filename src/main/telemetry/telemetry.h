@@ -37,11 +37,6 @@ typedef enum {
 } frskyGpsCoordFormat_e;
 
 typedef enum {
-    FRSKY_UNIT_METRICS = 0,
-    FRSKY_UNIT_IMPERIALS
-} frskyUnit_e;
-
-typedef enum {
     LTM_RATE_NORMAL,
     LTM_RATE_MEDIUM,
     LTM_RATE_SLOW
@@ -54,13 +49,8 @@ typedef enum {
 } smartportFuelUnit_e;
 
 typedef struct telemetryConfig_s {
-    float gpsNoFixLatitude;
-    float gpsNoFixLongitude;
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inverted;             // Flip the default inversion of the protocol - Same as serialrx_inverted in rx.c, but for telemetry.
-    frskyGpsCoordFormat_e frsky_coordinate_format;
-    frskyUnit_e frsky_unit;
-    uint8_t frsky_vfas_precision;
     uint8_t frsky_pitch_roll;
     uint8_t report_cell_voltage;
     uint8_t hottAlarmSoundInterval;
@@ -68,14 +58,18 @@ typedef struct telemetryConfig_s {
     smartportFuelUnit_e smartportFuelUnit;
     uint8_t ibusTelemetryType;
     uint8_t ltmUpdateRate;
+
+#ifdef USE_TELEMETRY_SIM
+    int16_t simLowAltitude;
+    char simGroundStationNumber[16];
+    char simPin[8];
     uint16_t simTransmitInterval;
-    uint8_t simTransmitFlags[4];
+    uint8_t simTransmitFlags;
+
     uint16_t accEventThresholdHigh;
     uint16_t accEventThresholdLow;
     uint16_t accEventThresholdNegX;
-    int16_t simLowAltitude;
-    uint8_t simGroundStationNumber[16];
-    uint8_t simPin[8];
+#endif
     struct {
         uint8_t extended_status_rate;
         uint8_t rc_channels_rate;
@@ -83,12 +77,13 @@ typedef struct telemetryConfig_s {
         uint8_t extra1_rate;
         uint8_t extra2_rate;
         uint8_t extra3_rate;
+        uint8_t version;
     } mavlink;
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);
@@ -98,4 +93,3 @@ void telemetryCheckState(void);
 void telemetryProcess(timeUs_t currentTimeUs);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
-

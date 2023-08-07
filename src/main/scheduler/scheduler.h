@@ -19,15 +19,13 @@
 
 #include "common/time.h"
 
-//#define SCHEDULER_DEBUG
-
 typedef enum {
     TASK_PRIORITY_IDLE = 0,     // Disables dynamic scheduling, task is executed only if no other task is active this cycle
     TASK_PRIORITY_LOW = 1,
     TASK_PRIORITY_MEDIUM = 3,
     TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
-    TASK_PRIORITY_REALTIME = 6,
+    TASK_PRIORITY_REALTIME = 18,
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
 
@@ -51,12 +49,13 @@ typedef struct {
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
-    TASK_GYROPID,
+    TASK_PID,
+    TASK_GYRO,
     TASK_RX,
     TASK_SERIAL,
     TASK_BATTERY,
     TASK_TEMPERATURE,
-#ifdef BEEPER
+#if defined(BEEPER) || defined(USE_DSHOT)
     TASK_BEEPER,
 #endif
 #ifdef USE_LIGHTS
@@ -86,7 +85,7 @@ typedef enum {
 #ifdef USE_LED_STRIP
     TASK_LEDSTRIP,
 #endif
-#if defined(USE_PWM_SERVO_DRIVER) || defined(USE_SERVO_SBUS)
+#if defined(USE_SERVO_SBUS)
     TASK_PWMDRIVER,
 #endif
 #ifdef STACK_CHECK
@@ -145,10 +144,8 @@ typedef struct {
 
     /* Statistics */
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
-#ifndef SKIP_TASK_STATISTICS
     timeUs_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
-#endif
 } cfTask_t;
 
 extern cfTask_t cfTasks[TASK_COUNT];

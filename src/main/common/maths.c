@@ -25,7 +25,9 @@
 #include "quaternion.h"
 #include "platform.h"
 
-FILE_COMPILE_FOR_SPEED
+#ifdef USE_ARM_MATH
+#include "arm_math.h"
+#endif
 
 // http://lolengine.net/blog/2011/12/21/better-function-approximations
 // Chebyshev http://stackoverflow.com/questions/345085/how-do-trigonometric-functions-work/345117#345117
@@ -95,7 +97,7 @@ float atan2_approx(float y, float x)
 float acos_approx(float x)
 {
     float xa = fabsf(x);
-    float result = sqrtf(1.0f - xa) * (1.5707288f + xa * (-0.2121144f + xa * (0.0742610f + (-0.0187293f * xa))));
+    float result = fast_fsqrtf(1.0f - xa) * (1.5707288f + xa * (-0.2121144f + xa * (0.0742610f + (-0.0187293f * xa))));
     if (x < 0.0f)
         return M_PIf - result;
     else
@@ -123,7 +125,7 @@ int32_t wrap_18000(int32_t angle)
 
 int32_t wrap_36000(int32_t angle)
 {
-    if (angle > 36000)
+    if (angle >= 36000)
         angle -= 36000;
     if (angle < 0)
         angle += 36000;
@@ -138,6 +140,18 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
         value -= deadband;
     } else if (value < 0) {
         value += deadband;
+    }
+    return value;
+}
+
+int32_t applyDeadbandRescaled(int32_t value, int32_t deadband, int32_t min, int32_t max)
+{
+    if (ABS(value) < deadband) {
+        value = 0;
+    } else if (value > 0) {
+        value = scaleRange(value - deadband, 0, max - deadband, 0, max);
+    } else if (value < 0) {
+        value = scaleRange(value + deadband, min + deadband, 0, min, 0);
     }
     return value;
 }
@@ -188,7 +202,7 @@ float devVariance(stdev_t *dev)
 
 float devStandardDeviation(stdev_t *dev)
 {
-    return sqrtf(devVariance(dev));
+    return fast_fsqrtf(devVariance(dev));
 }
 
 float degreesToRadians(int16_t degrees)
@@ -366,36 +380,36 @@ void sensorCalibrationResetState(sensorCalibrationState_t * state)
     }
 }
 
-void sensorCalibrationPushSampleForOffsetCalculation(sensorCalibrationState_t * state, int32_t sample[3])
+void sensorCalibrationPushSampleForOffsetCalculation(sensorCalibrationState_t * state, float sample[3])
 {
-    state->XtX[0][0] += (float)sample[0] * sample[0];
-    state->XtX[0][1] += (float)sample[0] * sample[1];
-    state->XtX[0][2] += (float)sample[0] * sample[2];
-    state->XtX[0][3] += (float)sample[0];
+    state->XtX[0][0] += sample[0] * sample[0];
+    state->XtX[0][1] += sample[0] * sample[1];
+    state->XtX[0][2] += sample[0] * sample[2];
+    state->XtX[0][3] += sample[0];
 
-    state->XtX[1][0] += (float)sample[1] * sample[0];
-    state->XtX[1][1] += (float)sample[1] * sample[1];
-    state->XtX[1][2] += (float)sample[1] * sample[2];
-    state->XtX[1][3] += (float)sample[1];
+    state->XtX[1][0] += sample[1] * sample[0];
+    state->XtX[1][1] += sample[1] * sample[1];
+    state->XtX[1][2] += sample[1] * sample[2];
+    state->XtX[1][3] += sample[1];
 
-    state->XtX[2][0] += (float)sample[2] * sample[0];
-    state->XtX[2][1] += (float)sample[2] * sample[1];
-    state->XtX[2][2] += (float)sample[2] * sample[2];
-    state->XtX[2][3] += (float)sample[2];
+    state->XtX[2][0] += sample[2] * sample[0];
+    state->XtX[2][1] += sample[2] * sample[1];
+    state->XtX[2][2] += sample[2] * sample[2];
+    state->XtX[2][3] += sample[2];
 
-    state->XtX[3][0] += (float)sample[0];
-    state->XtX[3][1] += (float)sample[1];
-    state->XtX[3][2] += (float)sample[2];
+    state->XtX[3][0] += sample[0];
+    state->XtX[3][1] += sample[1];
+    state->XtX[3][2] += sample[2];
     state->XtX[3][3] += 1;
 
-    float squareSum = ((float)sample[0] * sample[0]) + ((float)sample[1] * sample[1]) + ((float)sample[2] * sample[2]);
+    float squareSum = (sample[0] * sample[0]) + (sample[1] * sample[1]) + (sample[2] * sample[2]);
     state->XtY[0] += sample[0] * squareSum;
     state->XtY[1] += sample[1] * squareSum;
     state->XtY[2] += sample[2] * squareSum;
     state->XtY[3] += squareSum;
 }
 
-void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * state, int axis, int32_t sample[3], int target)
+void sensorCalibrationPushSampleForScaleCalculation(sensorCalibrationState_t * state, int axis, float sample[3], int target)
 {
     for (int i = 0; i < 3; i++) {
         float scaledSample = (float)sample[i] / (float)target;
@@ -496,7 +510,7 @@ bool sensorCalibrationSolveForScale(sensorCalibrationState_t * state, float resu
     sensorCalibration_SolveLGS(state->XtX, beta, state->XtY);
 
     for (int i = 0; i < 3; i++) {
-        result[i] = sqrtf(beta[i]);
+        result[i] = fast_fsqrtf(beta[i]);
     }
 
     return sensorCalibrationValidateResult(result);
@@ -506,3 +520,75 @@ float bellCurve(const float x, const float curveWidth)
 {
     return powf(M_Ef, -sq(x) / (2.0f * sq(curveWidth)));
 }
+
+float fast_fsqrtf(const float value) {
+    float ret = 0.0f;
+#ifdef USE_ARM_MATH
+    arm_sqrt_f32(value, &ret);
+#else
+    ret = sqrtf(value);
+#endif
+    if (isnan(ret))
+    {
+        return 0.0f;
+    }
+    return ret;
+}
+
+// function to calculate the normalization (pythagoras) of a 2-dimensional vector
+float NOINLINE calc_length_pythagorean_2D(const float firstElement, const float secondElement)
+{
+    return fast_fsqrtf(sq(firstElement) + sq(secondElement));
+}
+
+// function to calculate the normalization (pythagoras) of a 3-dimensional vector
+float NOINLINE calc_length_pythagorean_3D(const float firstElement, const float secondElement, const float thirdElement)
+{
+    return fast_fsqrtf(sq(firstElement) + sq(secondElement) + sq(thirdElement));
+}
+
+#ifdef SITL_BUILD
+
+/**
+ * @brief Floating-point vector subtraction, equivalent of CMSIS arm_sub_f32.
+*/
+void arm_sub_f32(
+  float * pSrcA,
+  float * pSrcB,
+  float * pDst,
+  uint32_t blockSize)
+{
+    for (uint32_t i = 0; i < blockSize; i++) {
+        pDst[i] = pSrcA[i] - pSrcB[i];
+    }
+}
+
+/**
+ * @brief Floating-point vector scaling, equivalent of CMSIS arm_scale_f32.
+*/
+void arm_scale_f32(
+  float * pSrc,
+  float scale,
+  float * pDst,
+  uint32_t blockSize)
+{
+    for (uint32_t i = 0; i < blockSize; i++) {
+        pDst[i] = pSrc[i] * scale;
+    }
+}
+
+/**
+ * @brief Floating-point vector multiplication, equivalent of CMSIS arm_mult_f32.
+*/
+void arm_mult_f32(
+  float * pSrcA,
+  float * pSrcB,
+  float * pDst,
+  uint32_t blockSize)
+{
+    for (uint32_t i = 0; i < blockSize; i++) {
+        pDst[i] = pSrcA[i] * pSrcB[i];
+    }
+}
+
+#endif

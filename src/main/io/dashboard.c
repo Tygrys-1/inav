@@ -264,11 +264,9 @@ static void updateFailsafeStatus(void)
         case FAILSAFE_RX_LOSS_IDLE:
             failsafeIndicator = 'I';
             break;
-#if defined(USE_NAV)
         case FAILSAFE_RETURN_TO_HOME:
             failsafeIndicator = 'H';
             break;
-#endif
         case FAILSAFE_LANDING:
             failsafeIndicator = 'l';
             break;
@@ -402,7 +400,7 @@ static void showStatusPage(void)
 
 #ifdef USE_MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, "HDG: %d", DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+        tfp_sprintf(lineBuffer, "HDG: %d", (int)DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         padHalfLineBuffer();
         i2c_OLED_set_line(rowIndex);
         i2c_OLED_send_string(lineBuffer);

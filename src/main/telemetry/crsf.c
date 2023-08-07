@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "platform.h"
-FILE_COMPILE_FOR_SPEED
 
 #if defined(USE_TELEMETRY) && defined(USE_SERIALRX_CRSF) && defined(USE_TELEMETRY_CRSF)
 
@@ -246,7 +245,11 @@ static void crsfFrameBatterySensor(sbuf_t *dst)
     // use sbufWrite since CRC does not include frame length
     sbufWriteU8(dst, CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
     crsfSerialize8(dst, CRSF_FRAMETYPE_BATTERY_SENSOR);
-    crsfSerialize16(dst, getBatteryVoltage() / 10); // vbat is in units of 0.01V
+    if (telemetryConfig()->report_cell_voltage) {
+        crsfSerialize16(dst, getBatteryAverageCellVoltage() / 10);
+    } else {
+        crsfSerialize16(dst, getBatteryVoltage() / 10); // vbat is in units of 0.01V
+    }
     crsfSerialize16(dst, getAmperage() / 10);
     const uint8_t batteryRemainingPercentage = calculateBatteryPercentage();
     crsfSerialize8(dst, (getMAhDrawn() >> 16));
@@ -285,15 +288,25 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
+// convert andgle in decidegree to radians/10000 with reducing angle to +/-180 degree range
+static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
+{
+    while (angle_decidegree > 1800) {
+        angle_decidegree -= 3600;
+    }
+    while (angle_decidegree < -1800) {
+        angle_decidegree += 3600;
+    }
+    return (int16_t)(RAD * 1000.0f * angle_decidegree);
+}
 
 static void crsfFrameAttitude(sbuf_t *dst)
 {
      sbufWriteU8(dst, CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
      crsfSerialize8(dst, CRSF_FRAMETYPE_ATTITUDE);
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.pitch));
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.roll));
-     crsfSerialize16(dst, DECIDEGREES_TO_RADIANS10000(attitude.values.yaw));
+     crsfSerialize16(dst, decidegrees2Radians10000(attitude.values.pitch));
+     crsfSerialize16(dst, decidegrees2Radians10000(attitude.values.roll));
+     crsfSerialize16(dst, decidegrees2Radians10000(attitude.values.yaw));
 }
 
 /*
@@ -319,7 +332,7 @@ static void crsfFrameFlightMode(sbuf_t *dst)
         }
         if (FLIGHT_MODE(FAILSAFE_MODE)) {
             flightMode = "!FS!";
-        } else if (ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE)) {
+        } else if (IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE)) {
             flightMode = "HRST";
         } else if (FLIGHT_MODE(MANUAL_MODE)) {
             flightMode = "MANU";
@@ -327,14 +340,14 @@ static void crsfFrameFlightMode(sbuf_t *dst)
             flightMode = "RTH";
         } else if (FLIGHT_MODE(NAV_POSHOLD_MODE)) {
             flightMode = "HOLD";
-        } else if (FLIGHT_MODE(NAV_CRUISE_MODE) && FLIGHT_MODE(NAV_ALTHOLD_MODE)) {
-            flightMode = "3CRS";
-        } else if (FLIGHT_MODE(NAV_CRUISE_MODE)) {
-            flightMode = "CRS";
-        } else if (FLIGHT_MODE(NAV_ALTHOLD_MODE)) {
-            flightMode = "AH";
+        } else if (FLIGHT_MODE(NAV_COURSE_HOLD_MODE) && FLIGHT_MODE(NAV_ALTHOLD_MODE)) {
+            flightMode = "CRUZ";
+        } else if (FLIGHT_MODE(NAV_COURSE_HOLD_MODE)) {
+            flightMode = "CRSH";
         } else if (FLIGHT_MODE(NAV_WP_MODE)) {
             flightMode = "WP";
+        } else if (FLIGHT_MODE(NAV_ALTHOLD_MODE)) {
+            flightMode = "AH";
         } else if (FLIGHT_MODE(ANGLE_MODE)) {
             flightMode = "ANGL";
         } else if (FLIGHT_MODE(HORIZON_MODE)) {

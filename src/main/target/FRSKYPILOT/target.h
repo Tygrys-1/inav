@@ -29,7 +29,6 @@
 
 #define BEEPER                  PA0
 #define BEEPER_INVERTED
-#define BEEPER_PWM
 #define BEEPER_PWM_FREQUENCY    4000
 
 #define USE_SPI
@@ -68,26 +67,15 @@
 #define USE_IMU_MPU6000
 #define USE_IMU_MPU6500
 
-#define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
-
-//#define USE_ONBOARD_IMU
-//#define USE_BOX_IMU
 #define USE_DUAL_GYRO
 
-//#if defined(USE_ONBOARD_IMU)
-#define MPU6500_EXTI_PIN        PE8
 #define MPU6500_SPI_BUS         BUS_SPI3
 #define MPU6500_CS_PIN          SPI3_NSS_PIN
 #define IMU_MPU6500_ALIGN       CW0_DEG_FLIP
 
-//#elif defined(USE_BOX_IMU)
-#define MPU6000_EXTI_PIN        NONE
 #define MPU6000_SPI_BUS         BUS_SPI2
 #define MPU6000_CS_PIN          SPI2_NSS_PIN
-#define IMU_MPU6000_ALIGN       CW270_DEG_FLIP // XXX check
-
-//#endif // IMU SELECTION
+#define IMU_MPU6000_ALIGN       CW270_DEG_FLIP
 
 // *************** SPI4: SDCARD *******************
 
@@ -123,7 +111,6 @@
 #define USE_MAG_LIS3MDL
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C3
-
 #define PITOT_I2C_BUS           BUS_I2C3
 
 #define USE_RANGEFINDER
@@ -152,7 +139,6 @@
 #define UART5_AF                1
 
 // OSD
-#define USE_OSD
 #define USE_UART6
 #define UART6_TX_PIN            PC6
 #define UART6_RX_PIN            PC7
@@ -200,6 +186,13 @@
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
 
-#define MAX_PWM_OUTPUT_PORTS 12
+#ifdef FRSKYPILOT_LED
+    #define USE_LED_STRIP
+    #define WS2811_PIN                      PA1 // S10 pad for INAV
+
+    #define MAX_PWM_OUTPUT_PORTS 9
+#else
+    #define MAX_PWM_OUTPUT_PORTS 12
+#endif
 
 #define USE_DSHOT

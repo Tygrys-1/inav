@@ -10,8 +10,18 @@ set(SVD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dev/svd")
 set(DOWNLOADS_DIR "${MAIN_DIR}/downloads")
 set(TOOLS_DIR "${MAIN_DIR}/tools")
 
-set(TOOLCHAIN_OPTIONS none arm-none-eabi)
-set(TOOLCHAIN "arm-none-eabi" CACHE STRING "Toolchain to use. Available: ${TOOLCHAIN_OPTIONS}")
+option(SITL "SITL build for host system" OFF)
+
+set(TOOLCHAIN_OPTIONS none arm-none-eabi host)
+if (SITL)
+    if (CMAKE_HOST_APPLE)
+        set(MACOSX TRUE)
+    endif()
+    set(TOOLCHAIN "host" CACHE STRING "Toolchain to use. Available: ${TOOLCHAIN_OPTIONS}")
+else()
+    set(TOOLCHAIN "arm-none-eabi" CACHE STRING "Toolchain to use. Available: ${TOOLCHAIN_OPTIONS}")
+endif()
+
 set_property(CACHE TOOLCHAIN PROPERTY STRINGS ${TOOLCHAIN_OPTIONS})
 if("" STREQUAL TOOLCHAIN)
     set(TOOLCHAIN none)
@@ -22,36 +32,43 @@ endif()
 
 option(COMPILER_VERSION_CHECK "Ensure the compiler matches the expected version" ON)
 
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+string(SUBSTRING ${GIT_SHA1} 0 8 GIT_REV)
+
+# Load settings related functions, so the tests can use them
+include(main)
+include(settings)
+
 if(TOOLCHAIN STREQUAL none)
     add_subdirectory(src/test)
 else()
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${TOOLCHAIN}.cmake")
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${TOOLCHAIN}-checks.cmake")
+    if (SITL)
+        include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${TOOLCHAIN}.cmake")
+    else()
+        set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${TOOLCHAIN}.cmake")
+        include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${TOOLCHAIN}-checks.cmake")
+    endif()
 endif()
 
-project(INAV VERSION 2.7.0)
+project(INAV VERSION 7.0.0)
 
 enable_language(ASM)
 
-set(CMAKE_C_STANDARD 99)
+if(MACOSX AND SITL)
+    set(CMAKE_C_STANDARD 11)
+else()
+    set(CMAKE_C_STANDARD 99)
+endif()
 set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_program(RUBY_EXECUTABLE ruby)
-if (NOT RUBY_EXECUTABLE)
-    message(FATAL_ERROR "Could not find ruby")
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(IS_RELEASE_BUILD ON)
 endif()
-
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-string(SUBSTRING ${GIT_SHA1} 0 8 GIT_REV)
 
 set(FIRMWARE_VERSION ${PROJECT_VERSION})
 
@@ -64,11 +81,14 @@ set(COMMON_COMPILE_DEFINITIONS
     FC_VERSION_PATCH_LEVEL=${CMAKE_PROJECT_VERSION_PATCH}
 )
 
-include(settings)
-include(openocd)
-include(svd)
-include(main)
+if (NOT SITL)
+    include(openocd)
+    include(svd)
+endif()
+
 include(stm32)
+include(at32)
+include(sitl)
 
 add_subdirectory(src)
 

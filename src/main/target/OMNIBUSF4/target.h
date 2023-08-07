@@ -64,11 +64,6 @@
 
 #define UG2864_I2C_BUS I2C_EXT_BUS
 
-// MPU6000 interrupts
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_BUS         BUS_SPI1
 
@@ -86,11 +81,16 @@
   #define MPU6500_SPI_BUS         MPU6000_SPI_BUS
   #define USE_IMU_MPU6500
   #define IMU_MPU6500_ALIGN       IMU_MPU6000_ALIGN
+
+  //BMI270
+  #define USE_IMU_BMI270
+  #define IMU_BMI270_ALIGN        IMU_MPU6000_ALIGN
+  #define BMI270_SPI_BUS          MPU6000_SPI_BUS
+  #define BMI270_CS_PIN           MPU6000_CS_PIN
 #endif
 
 #define USE_MAG
 #define MAG_I2C_BUS             I2C_EXT_BUS
-#define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
 #define USE_MAG_IST8310
@@ -191,6 +191,10 @@
 #define SERIAL_PORT_COUNT       5       // VCP, USART1, USART3, USART6, SOFTSERIAL1
 #endif
 
+#define DEFAULT_RX_TYPE         RX_TYPE_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -213,7 +217,6 @@
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          PA15
@@ -259,7 +262,6 @@
   #define WS2811_PIN                   PA1
 #endif
 
-#define DEFAULT_RX_TYPE         RX_TYPE_PPM
 #define DISABLE_RX_PWM_FEATURE
 #define DEFAULT_FEATURES        (FEATURE_TX_PROF_SEL | FEATURE_BLACKBOX | FEATURE_VBAT | FEATURE_OSD)
 
@@ -282,5 +284,3 @@
 #ifdef OMNIBUSF4PRO
 #define CURRENT_METER_SCALE   265
 #endif
-
-#define PCA9685_I2C_BUS         I2C_EXT_BUS

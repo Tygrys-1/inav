@@ -39,19 +39,15 @@
 typedef enum {
     PWM_TYPE_STANDARD = 0,
     PWM_TYPE_ONESHOT125,
-    PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
-    PWM_TYPE_DSHOT1200,
-    PWM_TYPE_SERIALSHOT,
 } motorPwmProtocolTypes_e;
 
 typedef enum {
     SERVO_TYPE_PWM = 0,
-    SERVO_TYPE_SERVO_DRIVER,
     SERVO_TYPE_SBUS,
     SERVO_TYPE_SBUS_PWM
 } servoProtocolType_e;
@@ -73,7 +69,6 @@ typedef struct rangefinderIOConfig_s {
 typedef struct {
     bool usesHwTimer;
     bool isDSHOT;
-    bool isSerialShot;
 } motorProtocolProperties_t;
 
 bool pwmMotorAndServoInit(void);

@@ -20,7 +20,12 @@
 #define USE_TARGET_CONFIG
 
 #define TARGET_BOARD_IDENTIFIER         "MBUS"
+
+#ifdef MAMBAF405US_I2C
+#define USBD_PRODUCT_STRING             "MAMBAF405US_I2C"
+#else
 #define USBD_PRODUCT_STRING             "MAMBAF405US"
+#endif
 
 // ******** Board LEDs  **********************
 #define LED0                            PC15
@@ -30,12 +35,6 @@
 #define BEEPER                          PC13
 #define BEEPER_INVERTED
 
-
-// ******* GYRO and ACC ********
-#define USE_EXTI
-#define GYRO_INT_EXTI                   PC4
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN               CW180_DEG
 #define MPU6000_SPI_BUS                 BUS_SPI1
@@ -44,24 +43,40 @@
 
 // *************** Baro **************************
 #define USE_I2C
-#define USE_I2C_DEVICE_2
 
+#ifdef MAMBAF405US_I2C
+
+#define USE_I2C_DEVICE_1
+#define I2C2_SCL                        PB8
+#define I2C2_SDA                        PB9
+#define DEFAULT_I2C_BUS                 BUS_I2C1
+
+#else
+
+#define USE_I2C_DEVICE_2
 #define I2C2_SCL                        PB10        // SCL pad TX3
 #define I2C2_SDA                        PB11        // SDA pad RX3
 #define DEFAULT_I2C_BUS                 BUS_I2C2
+
+#endif
 
 #define USE_BARO
 #define BARO_I2C_BUS                    DEFAULT_I2C_BUS
 
 #define USE_BARO_BMP280
 #define USE_BARO_MS5611
+#define USE_BARO_DPS310
 
 //*********** Magnetometer / Compass *************
 #define USE_MAG
 #define MAG_I2C_BUS                     DEFAULT_I2C_BUS
 
+#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define USE_MAG_QMC5883
+#define USE_MAG_IST8310
+#define USE_MAG_IST8308
+#define USE_MAG_MAG3110
 #define USE_MAG_LIS3MDL
 
 // ******* SERIAL ********
@@ -90,12 +105,6 @@
 #define USE_UART6
 #define UART6_TX_PIN                    PC6
 #define UART6_RX_PIN                    PC7
-
-/*
-#define USE_SOFTSERIAL1
-#define SOFTSERIAL_1_TX_PIN             PA2
-#define SOFTSERIAL_1_RX_PIN             PA2
-*/
 
 #define SERIAL_PORT_COUNT               7
 
@@ -143,7 +152,6 @@
 #define VBAT_SCALE_DEFAULT              1100
 
 // ******* OSD ********
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS                 BUS_SPI2
 #define MAX7456_CS_PIN                  PB12
@@ -161,7 +169,6 @@
 #define WS2811_PIN                      PB3
 
 // ******* FEATURES ********
-#define DEFAULT_RX_FEATURE              FEATURE_RX_SERIAL
 #define SERIALRX_UART                   SERIAL_PORT_USART1
 #define SERIALRX_PROVIDER               SERIALRX_SBUS
 
@@ -172,11 +179,14 @@
 #define TARGET_IO_PORTC                 0xffff
 #define TARGET_IO_PORTD                 (BIT(2))
 
-#define MAX_PWM_OUTPUT_PORTS            8
-#define TARGET_MOTOR_COUNT              4           
+#define MAX_PWM_OUTPUT_PORTS            4
+#define TARGET_MOTOR_COUNT              4
 
 // ESC-related features
 #define USE_DSHOT
-#define USE_SERIALSHOT
-//#define USE_ESC_SENSOR
+#define USE_ESC_SENSOR
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#define TEMPERATURE_I2C_BUS             DEFAULT_I2C_BUS
+#define PITOT_I2C_BUS                   DEFAULT_I2C_BUS
+#define RANGEFINDER_I2C_BUS             DEFAULT_I2C_BUS

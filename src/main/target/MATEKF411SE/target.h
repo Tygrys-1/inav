@@ -39,18 +39,12 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_BUS         BUS_SPI1
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PA14
-#define USE_MPU_DATA_READY_SIGNAL
-
-
 // *************** SPI2 OSD *****************************
 #define USE_SPI_DEVICE_2
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI2
 #define MAX7456_CS_PIN          PB12
@@ -77,8 +71,13 @@
 #endif
 
 #define USE_SOFTSERIAL2
+#ifdef MATEKF411SE_SS2_CH6
+#define SOFTSERIAL_2_TX_PIN     PB8 // CH6 pad
+#define SOFTSERIAL_2_RX_PIN     PB8
+#else
 #define SOFTSERIAL_2_TX_PIN     PA2 // TX2 pad
 #define SOFTSERIAL_2_RX_PIN     PA2
+#endif
 
 #define SERIAL_PORT_COUNT       5
 
@@ -100,6 +99,7 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 #define USE_BARO_DPS310
+#define USE_BARO_SPL06
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
@@ -116,7 +116,6 @@
 
 #define USE_RANGEFINDER
 #define USE_RANGEFINDER_MSP
-#define USE_RANGEFINDER_HCSR04_I2C
 #define RANGEFINDER_I2C_BUS     BUS_I2C1
 
 // *************** ADC *****************************
@@ -135,7 +134,7 @@
 #define AIRSPEED_ADC_CHANNEL        ADC_CHN_4
 
 // *************** LED2812 ************************
-#ifndef MATEKF411SE_FD_SFTSRL1
+#if !defined(MATEKF411SE_PINIO) && !defined(MATEKF411SE_FD_SFTSRL1)
 #define USE_LED_STRIP
 #define WS2811_PIN                  PB10
 #endif
@@ -144,6 +143,9 @@
 #define USE_PINIO
 #define USE_PINIOBOX
 #define PINIO1_PIN                  PA13 // Camera switcher
+#ifdef MATEKF411SE_PINIO
+#define PINIO2_PIN                  PB10 // External PINIO (LED pad)
+#endif
 
 // ***************  OTHERS *************************
 #define DEFAULT_FEATURES        (FEATURE_TX_PROF_SEL | FEATURE_OSD | FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY | FEATURE_SOFTSERIAL )
@@ -155,7 +157,6 @@
 
 #define USE_DSHOT
 #define USE_ESC_SENSOR
-#define USE_SERIALSHOT
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_IO_PORTA         0xffff

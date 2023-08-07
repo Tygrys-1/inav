@@ -33,12 +33,6 @@
 #define USE_IMU_MPU6000
 #define IMU_MPU6000_ALIGN       CW270_DEG
 
-// MPU6000 interrupts
-#define USE_EXTI
-#define GYRO_INT_EXTI PC4
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C2
 #define USE_MAG_HMC5883
@@ -47,7 +41,6 @@
 #define USE_MAG_IST8310
 #define USE_MAG_IST8308
 #define USE_MAG_LIS3MDL
-#define MAG_HMC5883_ALIGN       CW270_DEG_FLIP
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C2
 
@@ -101,10 +94,6 @@
 #define I2C_DEVICE_2_SHARES_UART3
 //#define USE_I2C_PULLUP
 
-//#define HIL
-
-#define MAG_GPS_ALIGN           CW180_DEG_FLIP
-
 #define USE_ADC
 #define ADC_CHANNEL_1_PIN               PC0
 #define ADC_CHANNEL_2_PIN               PC1
@@ -118,7 +107,7 @@
 
 #define SENSORS_SET             (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
-#define DEFAULT_RX_TYPE         RX_TYPE_PPM
+#define DEFAULT_RX_TYPE         RX_TYPE_SERIAL
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -129,5 +118,3 @@
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
-
-#define PCA9685_I2C_BUS         BUS_I2C2

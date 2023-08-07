@@ -25,14 +25,6 @@
 #define BEEPER                  PB3
 #define BEEPER_INVERTED
 
-// ICM20689 interrupt
-#define USE_EXTI
-#define GYRO_INT_EXTI            PA8
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_BUS         BUS_SPI1
 
@@ -45,7 +37,6 @@
 
 #define USE_MAG
 #define MAG_I2C_BUS             BUS_I2C1
-#define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
@@ -57,7 +48,6 @@
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI3
 #define MAX7456_CS_PIN          SPI3_NSS_PIN

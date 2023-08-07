@@ -49,10 +49,11 @@
 #define IMU_MPU6000_ALIGN       CW180_DEG_FLIP
 #define MPU6000_CS_PIN          PB2
 #define MPU6000_SPI_BUS         BUS_SPI1
-#define MPU6000_EXTI_PIN        PC4
 
-#define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
+#define USE_IMU_BMI270
+#define IMU_BMI270_ALIGN        CW180_DEG_FLIP
+#define BMI270_SPI_BUS          BUS_SPI1
+#define BMI270_CS_PIN           PB2
 
 // *************** I2C /Baro/Mag *********************
 #define USE_I2C
@@ -80,7 +81,6 @@
 #define USE_MAG_LIS3MDL
 
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
-
 #define PITOT_I2C_BUS           BUS_I2C1
 
 #define USE_RANGEFINDER
@@ -92,7 +92,6 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-#define USE_OSD
 #define USE_MAX7456
 #define MAX7456_SPI_BUS         BUS_SPI2
 #define MAX7456_CS_PIN          PB12
@@ -176,5 +175,5 @@
 
 #define MAX_PWM_OUTPUT_PORTS        8
 #define USE_DSHOT
-#define USE_SERIALSHOT
 #define USE_ESC_SENSOR
+

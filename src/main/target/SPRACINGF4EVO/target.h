@@ -30,10 +30,6 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USE_EXTI
-#define GYRO_INT_EXTI            PC13
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
@@ -142,7 +138,6 @@
 // PC4 - NC - Free for ADC12_IN14 / VTX CS
 // PC5 - NC - Free for ADC12_IN15 / VTX Enable / OSD VSYNC
 
-//#define USE_OSD
 //#define USE_MAX7456
 //#define USE_OSD_OVER_MSP_DISPLAYPORT
 

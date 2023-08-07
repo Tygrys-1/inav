@@ -40,15 +40,15 @@
 #include "drivers/barometer/barometer_ms56xx.h"
 #include "drivers/barometer/barometer_spl06.h"
 #include "drivers/barometer/barometer_dps310.h"
+#include "drivers/barometer/barometer_2smpb_02b.h"
 #include "drivers/barometer/barometer_msp.h"
 #include "drivers/time.h"
 
 #include "fc/runtime_config.h"
+#include "fc/settings.h"
 
 #include "sensors/barometer.h"
 #include "sensors/sensors.h"
-
-#include "flight/hil.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -56,20 +56,14 @@
 
 baro_t baro;                        // barometer access functions
 
-PG_REGISTER_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 3);
-
 #ifdef USE_BARO
-#define BARO_HARDWARE_DEFAULT    BARO_AUTODETECT
-#else
-#define BARO_HARDWARE_DEFAULT    BARO_NONE
-#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 4);
+
 PG_RESET_TEMPLATE(barometerConfig_t, barometerConfig,
-    .baro_hardware = BARO_HARDWARE_DEFAULT,
-    .use_median_filtering = 1,
-    .baro_calibration_tolerance = 150
+    .baro_hardware = SETTING_BARO_HARDWARE_DEFAULT,
+    .baro_calibration_tolerance = SETTING_BARO_CAL_TOLERANCE_DEFAULT
 );
-
-#ifdef USE_BARO
 
 static zeroCalibrationScalar_t zeroCalibration;
 static float baroGroundAltitude = 0;
@@ -188,6 +182,19 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
         }
         FALLTHROUGH;
 
+    case BARO_B2SMPB:
+#if defined(USE_BARO_B2SMPB)
+        if (baro2SMPB02BDetect(dev)) {
+            baroHardware = BARO_B2SMPB;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
+        FALLTHROUGH;
+
     case BARO_MSP:
 #ifdef USE_BARO_MSP
         // Skip autodetection for MSP baro, only allow manual config
@@ -238,51 +245,6 @@ bool baroInit(void)
     return true;
 }
 
-#define PRESSURE_SAMPLES_MEDIAN 3
-
-/*
-altitude pressure
-      0m   101325Pa
-    100m   100129Pa delta = 1196
-   1000m    89875Pa
-   1100m    88790Pa delta = 1085
-At sea level an altitude change of 100m results in a pressure change of 1196Pa, at 1000m pressure change is 1085Pa
-So set glitch threshold at 1000 - this represents an altitude change of approximately 100m.
-*/
-#define PRESSURE_DELTA_GLITCH_THRESHOLD 1000
-static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
-{
-    static int32_t barometerFilterSamples[PRESSURE_SAMPLES_MEDIAN];
-    static int currentFilterSampleIndex = 0;
-    static bool medianFilterReady = false;
-
-    int nextSampleIndex = currentFilterSampleIndex + 1;
-    if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
-        nextSampleIndex = 0;
-        medianFilterReady = true;
-    }
-    int previousSampleIndex = currentFilterSampleIndex - 1;
-    if (previousSampleIndex < 0) {
-        previousSampleIndex = PRESSURE_SAMPLES_MEDIAN - 1;
-    }
-    const int previousPressureReading = barometerFilterSamples[previousSampleIndex];
-
-    if (medianFilterReady) {
-        if (ABS(previousPressureReading - newPressureReading) < PRESSURE_DELTA_GLITCH_THRESHOLD) {
-            barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
-            currentFilterSampleIndex = nextSampleIndex;
-            return quickMedianFilter3(barometerFilterSamples);
-        } else {
-            // glitch threshold exceeded, so just return previous reading and don't add the glitched reading to the filter array
-            return barometerFilterSamples[previousSampleIndex];
-        }
-    } else {
-        barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
-        currentFilterSampleIndex = nextSampleIndex;
-        return newPressureReading;
-    }
-}
-
 typedef enum {
     BAROMETER_NEEDS_SAMPLES = 0,
     BAROMETER_NEEDS_CALCULATION
@@ -291,6 +253,12 @@ typedef enum {
 uint32_t baroUpdate(void)
 {
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
+
+#ifdef USE_SIMULATOR
+    if (ARMING_FLAG(SIMULATOR_MODE_HITL)) {
+        return 0;
+    }
+#endif
 
     switch (state) {
         default:
@@ -312,10 +280,8 @@ uint32_t baroUpdate(void)
             if (baro.dev.start_ut) {
                 baro.dev.start_ut(&baro.dev);
             }
+            //output: baro.baroPressure, baro.baroTemperature
             baro.dev.calculate(&baro.dev, &baro.baroPressure, &baro.baroTemperature);
-            if (barometerConfig()->use_median_filtering) {
-                baro.baroPressure = applyBarometerMedianFilter(baro.baroPressure);
-            }
             state = BAROMETER_NEEDS_SAMPLES;
             return baro.dev.ut_delay;
         break;
@@ -327,7 +293,7 @@ static float pressureToAltitude(const float pressure)
     return (1.0f - powf(pressure / 101325.0f, 0.190295f)) * 4433000.0f;
 }
 
-static float altitudeToPressure(const float altCm)
+float altitudeToPressure(const float altCm)
 {
     return powf(1.0f - (altCm / 4433000.0f), 5.254999) * 101325.0f;
 }
@@ -351,18 +317,12 @@ int32_t baroCalculateAltitude(void)
         if (zeroCalibrationIsCompleteS(&zeroCalibration)) {
             zeroCalibrationGetZeroS(&zeroCalibration, &baroGroundPressure);
             baroGroundAltitude = pressureToAltitude(baroGroundPressure);
-            LOG_D(BARO, "Barometer calibration complete (%d)", (int)lrintf(baroGroundAltitude));
+            LOG_DEBUG(BARO, "Barometer calibration complete (%d)", (int)lrintf(baroGroundAltitude));
         }
 
         baro.BaroAlt = 0;
     }
     else {
-#ifdef HIL
-        if (hilActive) {
-            baro.BaroAlt = hilToFC.baroAlt;
-            return baro.BaroAlt;
-        }
-#endif
         // calculates height from ground via baro readings
         baro.BaroAlt = pressureToAltitude(baro.baroPressure) - baroGroundAltitude;
    }
@@ -382,7 +342,7 @@ int16_t baroGetTemperature(void)
 
 bool baroIsHealthy(void)
 {
-    return true;
+    return sensors(SENSOR_BARO);
 }
 
 #endif /* BARO */
